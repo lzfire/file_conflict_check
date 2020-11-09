@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -54,20 +55,39 @@ func (f *FileList) getAllFile(pathname string) error {
 	return nil
 }
 
-func main() {
-	//自测变量设置
-	md5Str := "9074170c68cdbb5dca8BA43226417741"
-	fileName := "README.md"
-	pathStr, err := filepath.Abs(fileName)
+var (
+	svnURL       string
+	ssuName      string
+	md5Str       string
+	appversion   string
+	dirPath      string
+	conflictFile string
+)
+
+//解析命令行参数
+func parseArg() {
+	dir, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("filepath.Abs error:%s\n", fileName)
-		os.Exit(1)
+		log.Fatalf("get current dir path failed:%s", err)
 	}
+	flag.StringVar(&dirPath, "d", dir, "the dir path you want to search")
+	flag.StringVar(&svnURL, "u", "", "the svn request url")
+	flag.StringVar(&ssuName, "p", "", "the package you want to analay")
+	flag.StringVar(&appversion, "a", "appversion", "the file store appversion")
+	flag.StringVar(&md5Str, "m", "9074170c68cdbb5dca8BA43226417741", "the conflict file md5 value")
+	flag.StringVar(&conflictFile, "f", "README.md", "the conflict file name")
+}
+
+func main() {
+	//命令行处理
+	parseArg()
+	flag.Parse()
+
 	SEP = GetPathSeparator()
-	dirName := filepath.Dir(pathStr)
+	dirName := filepath.Dir(dirPath)
 	//收集需要查找目录下的所有文件
 	fileslist := FileList{}
-	if err = fileslist.getAllFile(dirName); err != nil {
+	if err := fileslist.getAllFile(dirName); err != nil {
 		log.Fatalf("getAllFile failed in dir:%s, err:%s\n", dirName, err)
 	}
 	//遍历每个文件的md5值，并做比较，找到冲突的md5则直接返回，否则提醒所查找的目录或包没有该冲突文件
