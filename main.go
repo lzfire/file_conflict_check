@@ -16,11 +16,11 @@ import (
 //FileList 收集需要查找目录下的所有文件
 type FileList []string
 
-//SEP seprator
+//SEP separator
 var SEP string
 
-//GetPathSeprator 获取不同系统下的路径分隔符
-func GetPathSeprator() string {
+//GetPathSeparator 获取不同系统下的路径分隔符
+func GetPathSeparator() string {
 	sysType := runtime.GOOS
 	var sep string
 
@@ -63,7 +63,7 @@ func main() {
 		fmt.Printf("filepath.Abs error:%s\n", fileName)
 		os.Exit(1)
 	}
-	SEP = GetPathSeprator()
+	SEP = GetPathSeparator()
 	dirName := filepath.Dir(pathStr)
 	//收集需要查找目录下的所有文件
 	fileslist := FileList{}
