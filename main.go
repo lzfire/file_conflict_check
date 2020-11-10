@@ -78,37 +78,55 @@ func parseArg() {
 	flag.StringVar(&conflictFile, "f", "README.md", "the conflict file name")
 }
 
+//checkFileConflict 检查某文件的md5值是否匹配
+//这样单独抽出来能够防止文件指针打开太多而没释放
+func checkFileConflict(filepath string) bool {
+	fileP, err := os.Open(filepath)
+	if err != nil {
+		fmt.Printf("file: %s open failed with err:%s\n", filepath, err)
+		return false
+	}
+	defer fileP.Close()
+	md5Value := md5.New()
+	_, err = io.Copy(md5Value, fileP)
+	if err != nil {
+		fmt.Printf("io.Copy error:%s\n", err)
+		return false
+	}
+	fileMd5 := hex.EncodeToString(md5Value.Sum(nil))
+	if strings.EqualFold(md5Str, fileMd5) {
+		return true
+	}
+	return false
+}
+
+//主函数
 func main() {
 	//命令行处理
 	parseArg()
 	flag.Parse()
 
 	SEP = GetPathSeparator()
-	dirName := filepath.Dir(dirPath)
-	//收集需要查找目录下的所有文件
-	fileslist := FileList{}
-	if err := fileslist.getAllFile(dirName); err != nil {
-		log.Fatalf("getAllFile failed in dir:%s, err:%s\n", dirName, err)
+	if dirPath != "" {
+		dirName := filepath.Dir(dirPath)
+		//收集需要查找目录下的所有文件
+		fileslist := FileList{}
+		if err := fileslist.getAllFile(dirName); err != nil {
+			log.Fatalf("getAllFile failed in dir:%s, err:%s\n", dirName, err)
+		}
+		//遍历每个文件的md5值，并做比较，找到冲突的md5则直接返回，否则提醒所查找的目录或包没有该冲突文件
+		for _, file := range fileslist {
+			if checkFileConflict(file) {
+				log.Printf("get the conflict file:%s\n", file)
+				return
+			}
+		}
+		log.Printf("no file conflict in:%s with md5:%s\n", dirName, md5Str)
 	}
-	//遍历每个文件的md5值，并做比较，找到冲突的md5则直接返回，否则提醒所查找的目录或包没有该冲突文件
-	for _, file := range fileslist {
-		fileP, err := os.Open(file)
-		if err != nil {
-			fmt.Printf("file: %s open failed with err:%s\n", file, err)
-			continue
-		}
-		defer fileP.Close()
-		md5Value := md5.New()
-		_, err = io.Copy(md5Value, fileP)
-		if err != nil {
-			fmt.Printf("io.Copy error:%s\n", err)
-			continue
-		}
-		fileMd5 := hex.EncodeToString(md5Value.Sum(nil))
-		if strings.EqualFold(md5Str, fileMd5) {
-			fmt.Printf("get the conflict file:%s\n", file)
-			return
-		}
+
+	if svnURL != "" {
+		result := HTTPGet(svnURL)
+		log.Printf("http get result:%s\n", string(result))
 	}
-	fmt.Printf("no file conflict in:%s with md5:%s\n", dirName, md5Str)
+
 }
