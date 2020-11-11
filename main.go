@@ -114,16 +114,24 @@ func main() {
 		if err := fileslist.getAllFile(dirName); err != nil {
 			log.Fatalf("getAllFile failed in dir:%s, err:%s\n", dirName, err)
 		}
+		isConflict := false
 		//遍历每个文件的md5值，并做比较，找到冲突的md5则直接返回，否则提醒所查找的目录或包没有该冲突文件
 		for _, file := range fileslist {
-			if checkFileConflict(file) {
+			if isConflict = checkFileConflict(file); isConflict {
 				log.Printf("get the conflict file:%s\n", file)
-				return
+				break
 			}
 		}
-		log.Printf("no file conflict in:%s with md5:%s\n", dirName, md5Str)
+		if !isConflict {
+			log.Printf("no file conflict in:%s with md5:%s\n", dirName, md5Str)
+		}
+	}
+	//从appversion中读取每一个包名，并存放在切片中
+	if appversion != "" {
+		ReadLineFile(appversion)
 	}
 
+	//根据前面分割好的包名，请求到改包的ssu包
 	if svnURL != "" {
 		result := HTTPGet(svnURL)
 		log.Printf("http get result:%s\n", string(result))
