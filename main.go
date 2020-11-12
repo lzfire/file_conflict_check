@@ -1,59 +1,13 @@
 package main
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"flag"
-	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
+
+	fc "file_conflict_check/file_check"
 )
-
-//FileList 收集需要查找目录下的所有文件
-type FileList []string
-
-//SEP separator
-var SEP string
-
-//GetPathSeparator 获取不同系统下的路径分隔符
-func GetPathSeparator() string {
-	sysType := runtime.GOOS
-	var sep string
-
-	switch sysType {
-	case "windows":
-		sep = "\\"
-	case "linux":
-		fallthrough
-	case "drawin":
-		fallthrough
-	default:
-		sep = "/"
-	}
-	return sep
-}
-
-func (f *FileList) getAllFile(pathname string) error {
-	rd, err := ioutil.ReadDir(pathname)
-	if err != nil {
-		return err
-	}
-	for _, fi := range rd {
-		if fi.IsDir() {
-			if err = f.getAllFile(pathname + SEP + fi.Name()); err != nil {
-				return err
-			}
-		} else {
-			*f = append(*f, pathname+SEP+fi.Name())
-		}
-	}
-	return nil
-}
 
 var (
 	svnURL       string
@@ -78,46 +32,23 @@ func parseArg() {
 	flag.StringVar(&conflictFile, "f", "README.md", "the conflict file name")
 }
 
-//checkFileConflict 检查某文件的md5值是否匹配
-//这样单独抽出来能够防止文件指针打开太多而没释放
-func checkFileConflict(filepath string) bool {
-	fileP, err := os.Open(filepath)
-	if err != nil {
-		fmt.Printf("file: %s open failed with err:%s\n", filepath, err)
-		return false
-	}
-	defer fileP.Close()
-	md5Value := md5.New()
-	_, err = io.Copy(md5Value, fileP)
-	if err != nil {
-		fmt.Printf("io.Copy error:%s\n", err)
-		return false
-	}
-	fileMd5 := hex.EncodeToString(md5Value.Sum(nil))
-	if strings.EqualFold(md5Str, fileMd5) {
-		return true
-	}
-	return false
-}
-
 //主函数
 func main() {
 	//命令行处理
 	parseArg()
 	flag.Parse()
 
-	SEP = GetPathSeparator()
 	if dirPath != "" {
 		dirName := filepath.Dir(dirPath)
 		//收集需要查找目录下的所有文件
-		fileslist := FileList{}
-		if err := fileslist.getAllFile(dirName); err != nil {
+		fileslist := fc.FileList{}
+		if err := fileslist.GetAllFile(dirName); err != nil {
 			log.Fatalf("getAllFile failed in dir:%s, err:%s\n", dirName, err)
 		}
 		isConflict := false
 		//遍历每个文件的md5值，并做比较，找到冲突的md5则直接返回，否则提醒所查找的目录或包没有该冲突文件
 		for _, file := range fileslist {
-			if isConflict = checkFileConflict(file); isConflict {
+			if isConflict = fc.CheckFileConflict(file, md5Str); isConflict {
 				log.Printf("get the conflict file:%s\n", file)
 				break
 			}
@@ -128,12 +59,12 @@ func main() {
 	}
 	//从appversion中读取每一个包名，并存放在切片中
 	if appversion != "" {
-		ReadLineFile(appversion)
+		fc.ReadLineFile(appversion)
 	}
 
 	//根据前面分割好的包名，请求到改包的ssu包
 	if svnURL != "" {
-		result := HTTPGet(svnURL)
+		result := fc.HTTPGet(svnURL)
 		log.Printf("http get result:%s\n", string(result))
 	}
 
