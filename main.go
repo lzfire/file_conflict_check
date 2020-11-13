@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	fc "file_conflict_check/file_check"
 )
@@ -43,18 +44,24 @@ func main() {
 		//收集需要查找目录下的所有文件
 		fileslist := fc.FileList{}
 		if err := fileslist.GetAllFile(dirName); err != nil {
-			log.Fatalf("getAllFile failed in dir:%s, err:%s\n", dirName, err)
+			log.Fatalf("getAllFile failed in dir:%s, err:%s", dirName, err)
 		}
 		isConflict := false
 		//遍历每个文件的md5值，并做比较，找到冲突的md5则直接返回，否则提醒所查找的目录或包没有该冲突文件
 		for _, file := range fileslist {
-			if isConflict = fc.CheckFileConflict(file, md5Str); isConflict {
-				log.Printf("get the conflict file:%s\n", file)
-				break
+			if conflictFile != "" {
+				pName := strings.LastIndex(file, "/")
+				log.Printf("filename:%s", file[pName+1:])
+				if file[pName+1:] == conflictFile {
+					if isConflict = fc.CheckFileConflict(file, md5Str); isConflict {
+						log.Printf("get the conflict file:%s", file)
+						break
+					}
+				}
 			}
 		}
 		if !isConflict {
-			log.Printf("no file conflict in:%s with md5:%s\n", dirName, md5Str)
+			log.Printf("no file conflict in:%s with md5:%s", dirName, md5Str)
 		}
 	}
 	//从appversion中读取每一个包名，并存放在切片中
@@ -65,7 +72,7 @@ func main() {
 	//根据前面分割好的包名，请求到改包的ssu包
 	if svnURL != "" {
 		result := fc.HTTPGet(svnURL)
-		log.Printf("http get result:%s\n", string(result))
+		log.Printf("http get result:%s", string(result))
 	}
 
 }
