@@ -12,6 +12,13 @@ import (
 	"unicode"
 )
 
+var (
+	keyValueDelim  string
+	notes          string
+	lineBreaker    string
+	defaultSection string
+)
+
 type section struct {
 	keyValue map[string]string
 }
@@ -27,7 +34,6 @@ func (cfg *config) newSection(name string) error {
 	}
 	if cfg.sections[name] != nil { //如果sections中某一项已经有数据
 		return errors.New("already has same section name")
-
 	}
 	cfg.sectionList = append(cfg.sectionList, name) //扩展
 	cfg.sections[name] = &section{
@@ -38,27 +44,6 @@ func (cfg *config) newSection(name string) error {
 
 func (cfg *config) init() {
 	cfg.sections = make(map[string]*section) //初始化map
-}
-
-//ListenFunc 监听回调函数
-type ListenFunc func(string)
-
-//Listener 监听接口
-type Listener interface {
-	listen(inifile string)
-}
-
-func listen() {
-
-}
-
-//Watch 对外提供的借口
-func Watch(filename string, listener Listener) (*config, error) {
-	var cfg *config
-	listener.listen(filename)
-	var e error = nil
-	cfg, e = load(filename)
-	return cfg, e
 }
 
 func load(filename string) (*config, error) {
