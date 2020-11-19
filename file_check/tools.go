@@ -30,7 +30,7 @@ func GetPathSeparator() string {
 func ReadLineFile(fileName string) {
 	file, err := os.Open(fileName)
 	if err != nil {
-		log.Fatalf("open file failed:%s\n", err)
+		log.Fatalf("open file:%s failed:%s\n", fileName, err)
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)

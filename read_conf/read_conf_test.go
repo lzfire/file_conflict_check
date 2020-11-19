@@ -1,4 +1,4 @@
-package readConf
+package read_conf
 
 import (
 	"bufio"
@@ -25,7 +25,6 @@ func TestParseSecName(t *testing.T) {
 	if e != ex2 {
 		t.Errorf("ex2 wrong, '%s'", e)
 	}
-
 }
 
 func TestParsekey(t *testing.T) {
@@ -55,7 +54,6 @@ func TestParseValue(t *testing.T) {
 	if err != ex2 {
 		t.Errorf("ex2 wrong")
 	}
-
 }
 
 func TestParse(t *testing.T) {
@@ -66,9 +64,8 @@ func TestParse(t *testing.T) {
 	}
 	defer f.Close()
 	buf := bufio.NewReader(f)
-	_, erro := parse(buf)
+	cfg, erro := parse(buf)
 	if erro != e {
 		t.Errorf("parse filed")
 	}
-
 }

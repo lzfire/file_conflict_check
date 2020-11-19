@@ -1,4 +1,4 @@
-package readConf
+package read_conf
 
 import (
 	"bufio"
@@ -19,34 +19,37 @@ var (
 	defaultSection string
 )
 
-type section struct {
+//Section xxx
+type Section struct {
 	keyValue map[string]string
 }
 
-type config struct {
-	sectionList []string            //存key
-	sections    map[string]*section //实际存储数据的地方（形成key和value的映射）
+//Config 配置结构体
+type Config struct {
+	SectionList []string            //存key
+	Sections    map[string]*Section //实际存储数据的地方（形成key和value的映射）
 }
 
-func (cfg *config) newSection(name string) error {
+func (cfg *Config) newSection(name string) error {
 	if len(name) == 0 { //如果名字长度为0
-		return errors.New("section name is empty")
+		return errors.New("Section name is empty")
 	}
-	if cfg.sections[name] != nil { //如果sections中某一项已经有数据
-		return errors.New("already has same section name")
+	if cfg.Sections[name] != nil { //如果sections中某一项已经有数据
+		return errors.New("already has same Section name")
 	}
-	cfg.sectionList = append(cfg.sectionList, name) //扩展
-	cfg.sections[name] = &section{
+	cfg.SectionList = append(cfg.SectionList, name) //扩展
+	cfg.Sections[name] = &Section{
 		keyValue: make(map[string]string),
 	}
 	return nil
 }
 
-func (cfg *config) init() {
-	cfg.sections = make(map[string]*section) //初始化map
+func (cfg *Config) init() {
+	cfg.Sections = make(map[string]*Section) //初始化map
 }
 
-func load(filename string) (*config, error) {
+//Load 加载ini配置文件到定义的结构体中
+func Load(filename string) (*Config, error) {
 	f, err := os.Open(filename) //打开文件
 	if err != nil {             //如果打开失败--遇到错误
 		return nil, err
@@ -71,13 +74,13 @@ func getLine(buf *bufio.Reader, isEOF *bool) ([]byte, error) {
 
 }
 
-//解析section的名字
-func parseSecName(line []byte, cfg *config) (string, error) {
+//解析Section的名字
+func parseSecName(line []byte, cfg *Config) (string, error) {
 	close := bytes.LastIndexByte(line, ']') //获得最后‘]’的下标
 	if close == -1 {                        //如果缺少‘]’，报错
-		return "", fmt.Errorf("unclosed section: %s", line)
+		return "", fmt.Errorf("unclosed Section: %s", line)
 	}
-	secName := string(line[1:close]) //获取section的名字
+	secName := string(line[1:close]) //获取Section的名字
 	err := cfg.newSection(secName)   //开辟新空间并获得错误信息
 	if err != nil {                  //如果存在错误，返回错误信息
 		return "", err
@@ -94,7 +97,7 @@ func parseKeyName(line string) (string, int, error) {
 	return strings.TrimSpace(line[0:end]), end + 1, nil //这里返回的下标为分割符下标+1
 }
 
-func (sec *section) newKeyValue(keyName string, value string) error {
+func (sec *Section) newKeyValue(keyName string, value string) error {
 	if _, ok := sec.keyValue[keyName]; ok {
 		return fmt.Errorf("key(%v) already exists", keyName)
 	}
@@ -116,8 +119,8 @@ func parseValue(line string) (string, error) {
 	return line, nil //由于之前直接返回的是key-value分割符下标+1，就是value开始的地方
 }
 
-func parse(reader *bufio.Reader) (*config, error) {
-	var cfg config
+func parse(reader *bufio.Reader) (*Config, error) {
+	var cfg Config
 	cfg.init()     //初始化
 	isEOF := false //文件是否关闭
 	secName := defaultSection
@@ -139,7 +142,7 @@ func parse(reader *bufio.Reader) (*config, error) {
 			}
 			continue
 		}
-		if len(cfg.sectionList) == 0 { //没有空间则开辟新空间
+		if len(cfg.SectionList) == 0 { //没有空间则开辟新空间
 			err = cfg.newSection(secName)
 			if err != nil {
 				return nil, err
@@ -153,7 +156,7 @@ func parse(reader *bufio.Reader) (*config, error) {
 		if err != nil {
 			return nil, err
 		}
-		err = cfg.sections[secName].newKeyValue(keyName, value) //存key和value
+		err = cfg.Sections[secName].newKeyValue(keyName, value) //存key和value
 		if err != nil {
 			return nil, err
 		}
@@ -166,8 +169,11 @@ func init() { //根据系统来确定注释行符号
 	case "windows": //如果是windows系统
 		notes = ";"
 		lineBreaker = "\r\n"
-	case "linux": //如果是linux系统
+	default: //如果是linux系统
 		notes = "#"
 		lineBreaker = "\n"
+	}
+	if keyValueDelim == "" {
+		keyValueDelim = "="
 	}
 }

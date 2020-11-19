@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	fc "file_conflict_check/file_check"
+	rf "file_conflict_check/read_conf"
 )
 
 var (
@@ -28,7 +29,7 @@ func parseArg() {
 	flag.StringVar(&dirPath, "d", dir, "the dir path you want to search")
 	flag.StringVar(&svnURL, "u", "", "the svn request url")
 	flag.StringVar(&ssuName, "p", "", "the package you want to analay")
-	flag.StringVar(&appversion, "a", "appversion", "the file store appversion")
+	flag.StringVar(&appversion, "a", "", "the file store appversion")
 	flag.StringVar(&md5Str, "m", "9074170c68cdbb5dca8BA43226417741", "the conflict file md5 value")
 	flag.StringVar(&conflictFile, "f", "README.md", "the conflict file name")
 }
@@ -51,7 +52,6 @@ func main() {
 		for _, file := range fileslist {
 			if conflictFile != "" {
 				pName := strings.LastIndex(file, "/")
-				log.Printf("filename:%s", file[pName+1:])
 				if file[pName+1:] == conflictFile {
 					if isConflict = fc.CheckFileConflict(file, md5Str); isConflict {
 						log.Printf("get the conflict file:%s", file)
@@ -68,6 +68,11 @@ func main() {
 	if appversion != "" {
 		fc.ReadLineFile(appversion)
 	}
+	cfg, err2 := rf.Load("./read_conf/testdata/test.ini")
+	if err2 != nil {
+		log.Fatalf("rf Load failed:%s", err2)
+	}
+	log.Printf("rf.Load cfg:%#v", cfg)
 
 	//根据前面分割好的包名，请求到改包的ssu包
 	if svnURL != "" {
