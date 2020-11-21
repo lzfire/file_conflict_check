@@ -73,6 +73,11 @@ func main() {
 		log.Fatalf("rf Load failed:%s", err2)
 	}
 	log.Printf("rf.Load cfg:%#v", cfg)
+	for _, section := range cfg.SectionList {
+		for key, value := range cfg.Sections[section] {
+			log.Printf("key:%s, value:%s", key, value)
+		}
+	}
 
 	//根据前面分割好的包名，请求到改包的ssu包
 	if svnURL != "" {
