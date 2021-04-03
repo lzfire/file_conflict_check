@@ -72,17 +72,19 @@ func main() {
 	if err2 != nil {
 		log.Fatalf("rf Load failed:%s", err2)
 	}
-	log.Printf("rf.Load cfg:%#v", cfg)
-	for _, section := range cfg.SectionList {
-		for key, value := range cfg.Sections[section] {
-			log.Printf("key:%s, value:%s", key, value)
+	for sectionName, sections := range cfg.Sections {
+		for key, value := range sections.KeyValue {
+			log.Printf("sectionName: %s, key:%s, value:%s", sectionName, key, value)
 		}
 	}
 
 	//根据前面分割好的包名，请求到改包的ssu包
+	svnURL := cfg.Sections["parameter"].KeyValue["svnURL1"]
 	if svnURL != "" {
-		result := fc.HTTPGet(svnURL)
-		log.Printf("http get result:%s", string(result))
+		//result := fc.HTTPGet(svnURL)
+		log.Printf("http get result:%s", svnURL)
+	} else {
+		log.Printf("svnURL is empty")
 	}
 
 }

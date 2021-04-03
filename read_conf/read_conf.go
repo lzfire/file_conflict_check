@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	keyValueDelim  string
+	KeyValueDelim  string
 	notes          string
 	lineBreaker    string
 	defaultSection string
@@ -21,7 +21,7 @@ var (
 
 //Section xxx
 type Section struct {
-	keyValue map[string]string
+	KeyValue map[string]string
 }
 
 //Config 配置结构体
@@ -39,7 +39,7 @@ func (cfg *Config) newSection(name string) error {
 	}
 	cfg.SectionList = append(cfg.SectionList, name) //扩展
 	cfg.Sections[name] = &Section{
-		keyValue: make(map[string]string),
+		KeyValue: make(map[string]string),
 	}
 	return nil
 }
@@ -90,18 +90,18 @@ func parseSecName(line []byte, cfg *Config) (string, error) {
 
 //解析key的名字
 func parseKeyName(line string) (string, int, error) {
-	end := strings.IndexAny(line, keyValueDelim) //确定key-alue的分割符的下标
+	end := strings.IndexAny(line, KeyValueDelim) //确定key-alue的分割符的下标
 	if end < 0 {                                 //如果下表<0，即存在错误
-		return "", -1, fmt.Errorf("delimiter(%s) not found", keyValueDelim)
+		return "", -1, fmt.Errorf("delimiter(%s) not found", KeyValueDelim)
 	}
 	return strings.TrimSpace(line[0:end]), end + 1, nil //这里返回的下标为分割符下标+1
 }
 
 func (sec *Section) newKeyValue(keyName string, value string) error {
-	if _, ok := sec.keyValue[keyName]; ok {
+	if _, ok := sec.KeyValue[keyName]; ok {
 		return fmt.Errorf("key(%v) already exists", keyName)
 	}
-	sec.keyValue[keyName] = value
+	sec.KeyValue[keyName] = value
 	return nil
 }
 
@@ -173,7 +173,7 @@ func init() { //根据系统来确定注释行符号
 		notes = "#"
 		lineBreaker = "\n"
 	}
-	if keyValueDelim == "" {
-		keyValueDelim = "="
+	if KeyValueDelim == "" {
+		KeyValueDelim = "="
 	}
 }
